@@ -1,8 +1,21 @@
+use eyre::Result;
 use std::path::Path;
 use tokio::fs;
-use eyre::Result;
 
 use async_recursion::async_recursion;
+
+pub async fn replace_file(from: impl AsRef<Path>, to: impl AsRef<Path>) -> Result<()> {
+    let original_path = from.as_ref().to_owned();
+    let destination = to.as_ref().to_owned();
+
+    if let Err(_) = fs::rename(&original_path, &destination).await {
+        if destination.exists() {
+            fs::remove_file(&destination).await?;
+        }
+        fs::copy(original_path, destination).await?;
+    }
+    Ok(())
+}
 
 #[async_recursion(?Send)]
 pub async fn copy_dir(
@@ -12,7 +25,9 @@ pub async fn copy_dir(
     let original_path = from.as_ref().to_owned();
     let destination = to.as_ref().to_owned();
 
-    fs::create_dir(&destination).await?;
+    if !destination.exists() {
+        fs::create_dir(&destination).await?;
+    }
 
     let mut entries = fs::read_dir(original_path).await?;
 
@@ -24,7 +39,7 @@ pub async fn copy_dir(
             copy_dir(path, new_dest).await?;
         } else {
             let new_dest = destination.join(path.file_name().unwrap());
-            fs::copy(path, new_dest).await?;
+            replace_file(path, new_dest).await?;
         }
     }
 

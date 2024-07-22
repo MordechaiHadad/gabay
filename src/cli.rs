@@ -4,7 +4,7 @@ use clap::Parser;
 use eyre::Result;
 use tracing::info;
 
-use crate::handlers::{add_handler, backup_handler, reset_handler, rm_handler};
+use crate::handlers::{add_handler, backup_handler, list_handler, reset_handler, rm_handler};
 
 #[derive(Debug, Parser)]
 #[command(version)]
@@ -24,6 +24,9 @@ enum Cli {
 
     #[clap(alias = "erase")]
     Reset,
+
+    #[clap(alias = "ls")]
+    List,
 }
 
 pub async fn start() -> Result<()> {
@@ -41,6 +44,8 @@ pub async fn start() -> Result<()> {
         Cli::Reset => {
             reset_handler::start().await?;
         }
+        Cli::List => list_handler::start().await?,
+
     }
     Ok(())
 }

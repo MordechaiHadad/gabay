@@ -18,11 +18,11 @@ pub async fn start(path: PathBuf) -> Result<()> {
 
     let backup = tokio::fs::read_to_string(&backup_file).await?;
     let mut backup: BackupFile = serde_json::from_str(&backup)?;
-    if !backup.paths.contains_key(&path) {
+    if !backup.contains_key(&path) {
         return Err(eyre::eyre!("Path is not inside backup file"));
     }
 
-    backup.paths.remove(&path);
+    backup.remove(&path);
     let content = serde_json::to_string(&backup)?;
     tokio::fs::write(&backup_file, content).await?;
     info!("Path removed from backup file");

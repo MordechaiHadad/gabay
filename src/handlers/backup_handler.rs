@@ -2,9 +2,12 @@ use chrono::Utc;
 use eyre::Result;
 use std::path::PathBuf;
 use tokio::fs;
-use tracing::info;
+use tracing::{info, warn};
 
-use crate::{helpers::Hasher, structs::BackupFile};
+use crate::{
+    helpers::{fs::replace_file, Hasher},
+    structs::BackupFile,
+};
 
 pub async fn start(dest: PathBuf) -> Result<()> {
     info!("Starting backup process");
@@ -17,7 +20,7 @@ pub async fn start(dest: PathBuf) -> Result<()> {
 
     let now = chrono::Utc::now();
 
-    for (path, info) in backup.paths.iter() {
+    for (path, info) in backup.iter() {
         let file_name = path.file_name().unwrap().to_str().unwrap();
         let is_file = path.is_file();
         let hash = if is_file {
@@ -26,20 +29,28 @@ pub async fn start(dest: PathBuf) -> Result<()> {
             hasher.hash_dir(path).await?
         };
 
-        if hash != info.hash || info.last_backup.is_none() {
-            info!("{} has changed, backing up", path.display());
-            let backup_dist = dest.join(file_name);
-
-            if is_file {
-                tokio::fs::copy(path, backup_dist).await?;
-            } else {
-                crate::helpers::fs::copy_dir(path.clone(), backup_dist).await?;
-            }
-            updates.push((path.clone(), now, hash));
+        if hash == info.hash && info.last_backup.is_some() {
+            continue;
         }
+
+        info!("{} has changed, backing up", path.display());
+        let backup_dist = dest.join(file_name);
+
+        if is_file {
+            replace_file(path, backup_dist).await?;
+        } else {
+            crate::helpers::fs::copy_dir(path.clone(), backup_dist).await?;
+        }
+        updates.push((path.clone(), now, hash));
     }
+
+    if updates.is_empty() {
+        warn!("There is nothing to backup");
+        return Ok(());
+    }
+
     for (path, now, hash) in updates {
-        if let Some(info) = backup.paths.get_mut(&path) {
+        if let Some(info) = backup.get_mut(&path) {
             info.last_backup = Some(now);
             info.hash = hash;
         }
@@ -47,5 +58,7 @@ pub async fn start(dest: PathBuf) -> Result<()> {
 
     let content = serde_json::to_string(&backup)?;
     tokio::fs::write(&backup_file, content).await?;
+
+    info!("Backup process finished");
     Ok(())
 }

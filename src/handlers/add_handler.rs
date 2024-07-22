@@ -9,7 +9,7 @@ use tracing::{debug, info};
 
 use crate::{
     helpers::{dirs::get_backup_file, Hasher},
-    structs::{BackupFile, PathInfo},
+    structs::{BackupEntry, BackupFile},
 };
 
 pub async fn start(path: PathBuf) -> Result<()> {
@@ -39,13 +39,13 @@ pub async fn start(path: PathBuf) -> Result<()> {
         None => Default::default(),
     };
 
-    if backup.paths.contains_key(&path) {
+    if backup.contains_key(&path) {
         return Err(eyre::eyre!("Path is already inside backup file"));
     }
 
-    backup.paths.insert(
+    backup.insert(
         path,
-        PathInfo {
+        BackupEntry {
             hash,
             last_backup: None,
         },
