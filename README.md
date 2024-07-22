@@ -18,9 +18,9 @@ The executable will be available in target/release.
 
 Gabay supports the following subcommands:
 
-- `add <path>`: Adds a new item to the system. The `<path>` argument specifies the location of the item to be added.
+- `add <path>`: Adds a new item to the backup file. The `<path>` argument specifies the path to be added.
 
-- `rm <path>` or `remove <path>`: Removes an item from the system. The `<path>` argument specifies the location of the item to be removed.
+- `rm <path>` or `remove <path>`: Removes a path from the backup file. The `<path>` argument specifies the path to be removed.
 
 - `backup <destination>`: Backs up the files to the specified `<destination>`.
 
