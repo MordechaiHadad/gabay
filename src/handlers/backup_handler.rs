@@ -1,7 +1,6 @@
 use chrono::Utc;
 use eyre::Result;
 use std::path::PathBuf;
-use tokio::fs;
 use tracing::{info, warn};
 
 use crate::{
@@ -9,6 +8,28 @@ use crate::{
     structs::BackupFile,
 };
 
+/// Starts the backup process.
+///
+/// This function reads the backup file, checks for changes in the files/directories listed in the backup,
+/// and performs the backup if necessary. It updates the backup file with the latest backup information.
+///
+/// # Arguments
+///
+/// * `dest` - The destination directory where the backup files will be stored.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the backup process completes successfully, or an `eyre::Report` if an error occurs.
+///
+/// # Panics
+///
+/// This function will panic if it encounters an unrecoverable error during the backup process.
+///
+/// # Errors
+///
+/// This function will return an error if it fails to read the backup file, fails to parse the backup file,
+/// encounters an error while hashing files/directories, fails to replace a file during backup, fails to copy
+/// a directory during backup, or fails to write the updated backup file.
 pub async fn start(dest: PathBuf) -> Result<()> {
     info!("Starting backup process");
     let backup_file = crate::helpers::dirs::get_backup_file()?;

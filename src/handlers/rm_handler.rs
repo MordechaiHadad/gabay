@@ -4,6 +4,11 @@ use tracing::info;
 
 use crate::{helpers::dirs::get_backup_file, structs::BackupFile};
 
+/// Removes a path from the backup file.
+///
+/// # Errors
+///
+/// This function will return an error if .
 pub async fn start(path: PathBuf) -> Result<()> {
     info!("Removing path from backup file");
 

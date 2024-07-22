@@ -1,17 +1,20 @@
 use std::path::PathBuf;
 
 use eyre::Result;
-use tokio::{
-    fs::{self, File},
-    io::{AsyncReadExt, AsyncWriteExt},
-};
-use tracing::{debug, info};
+use tokio::fs::{self};
+use tracing::info;
 
 use crate::{
     helpers::{dirs::get_backup_file, Hasher},
     structs::{BackupEntry, BackupFile},
 };
 
+
+/// Adds a path to the backup file.
+///
+/// # Errors
+///
+/// This function will return an error if .
 pub async fn start(path: PathBuf) -> Result<()> {
     if !path.is_absolute() {
         return Err(eyre::eyre!("Path must be absolute"));
