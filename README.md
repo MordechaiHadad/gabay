@@ -8,7 +8,7 @@ Gabay is a command-line tool designed to manage and automate the task of backing
 To install Gabay, ensure you have Rust and Cargo installed on your system. Clone the repository and build the project using Cargo:
 
 ```sh
-git clone https://github.com/yourusername/gabay.git
+git clone https://github.com/MordechaiHadad/gabay.git
 cd gabay
 cargo build --release
 ```
