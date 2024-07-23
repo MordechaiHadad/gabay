@@ -32,9 +32,10 @@ impl Hasher {
         finalize: bool,
     ) -> Result<String> {
         let file = File::open(path).await?;
-        let mut reader = BufReader::new(file);
+        let mut reader = BufReader::with_capacity(8192 * 1024, file);
 
-        let mut buffer = [0; 1024];
+        let mut buffer = vec![0; 8192 * 1024];
+
         loop {
             let bytes_read = reader.read(&mut buffer).await?;
             if bytes_read == 0 {
