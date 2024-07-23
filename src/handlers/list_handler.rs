@@ -42,19 +42,19 @@ pub async fn start() -> Result<()> {
             path.to_str().unwrap().to_string()
         };
 
-        println!("║ {}. {:<77} ║", index + 1, truncated_path);
+        println!("║ {}. {}{}║", index + 1, truncated_path, " ".repeat(TABLE_WIDTH + header.len() - truncated_path.len() + 1));
         println!(
             "║    └─ Last Backup: {:<67} ║",
             format_last_backup(entry.last_backup)
         );
 
         if index < backup.len() - 1 {
-            println!("╟───────────────────────────────────────────────────────────────────────────────────────╢");
+            println!("╟{}╢", "─".repeat(TABLE_WIDTH + header.len() + 5));
         }
     }
 
     println!(
-        "╚═══════════════════════════════════════════════════════════════════════════════════════╝"
+        "╚{}╝", "═".repeat(TABLE_WIDTH + header.len() + 5)
     );
 
     Ok(())
