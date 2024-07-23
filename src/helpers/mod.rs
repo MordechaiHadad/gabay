@@ -4,7 +4,10 @@ pub mod fs;
 use std::path::Path;
 
 use async_recursion::async_recursion;
+use chrono::{DateTime, Utc};
 use eyre::Result;
+use indicatif::ProgressBar;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tokio::{
     fs::{read_dir, File},
@@ -22,7 +25,7 @@ impl Hasher {
         }
     }
 
-    pub async fn hash_file<P: AsRef<Path>>(&mut self, path: P) -> Result<String> {
+    pub async fn hash_file<P: AsRef<Path>>(&mut self, path: P, pb: &ProgressBar) -> Result<String> {
         let file = File::open(path).await?;
         let mut reader = BufReader::new(file);
 
@@ -33,6 +36,7 @@ impl Hasher {
                 break;
             }
             self.hasher.update(&buffer[..bytes_read]);
+            pb.inc(bytes_read as u64);
         }
 
         let result = self.hasher.finalize_reset();
@@ -40,18 +44,49 @@ impl Hasher {
     }
 
     #[async_recursion(?Send)]
-    pub async fn hash_dir<P: AsRef<Path>>(&mut self, path: P) -> Result<String> {
+    pub async fn hash_dir<P: AsRef<Path>>(&mut self, path: P, pb: &ProgressBar) -> Result<String> {
         let mut entries = read_dir(path).await?;
         while let Some(entry) = entries.next_entry().await? {
             let path = entry.path();
             if path.is_dir() {
-                self.hash_dir(path).await?;
+                self.hash_dir(path, pb).await?;
             } else {
-                self.hash_file(path).await?;
+                self.hash_file(path, pb).await?;
             }
         }
 
         let result = self.hasher.finalize_reset();
         Ok(format!("{:x}", result))
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Metadata {
+    pub size: u64,
+    pub last_modified: DateTime<Utc>,
+}
+
+pub async fn get_metadata(path: &Path) -> Result<Metadata> {
+    let metadata = path.metadata()?;
+    let size = get_path_size(path).await?;
+
+    Ok(Metadata {
+        size,
+        last_modified: metadata.modified()?.into(),
+    })
+}
+
+#[async_recursion(?Send)]
+pub async fn get_path_size(path: &Path) -> Result<u64> {
+    if path.is_dir() {
+        let mut size = 0;
+        let mut entries = read_dir(path).await?;
+        while let Some(entry) = entries.next_entry().await? {
+            let path = entry.path();
+            size += get_path_size(&path).await?;
+        }
+        return Ok(size);
+    } else {
+        return Ok(path.metadata()?.len());
     }
 }

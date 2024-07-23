@@ -1,10 +1,11 @@
 use chrono::Utc;
 use eyre::Result;
+use indicatif::{ProgressBar, ProgressStyle};
 use std::path::PathBuf;
 use tracing::{info, warn};
 
 use crate::{
-    helpers::{fs::replace_file, Hasher},
+    helpers::{fs::replace_file, get_metadata, Hasher},
     structs::BackupFile,
 };
 
@@ -44,11 +45,29 @@ pub async fn start(dest: PathBuf) -> Result<()> {
     for (path, info) in backup.iter() {
         let file_name = path.file_name().unwrap().to_str().unwrap();
         let is_file = path.is_file();
+        let metadata = get_metadata(&path).await?;
+
+        if metadata.size == info.metadata.size
+            || metadata.last_modified == info.metadata.last_modified
+        {
+            continue;
+        }
+
+        let pb = ProgressBar::new(metadata.size);
+        pb.set_style(
+            ProgressStyle::default_bar()
+                .template("{msg}\n{wide_bar} {bytes}/{total_bytes} ({eta})")?
+                .progress_chars("#>-"),
+        );
+        pb.set_message(format!("Hashing {}", path.display()));
+
         let hash = if is_file {
-            hasher.hash_file(path).await?
+            hasher.hash_file(path, &pb).await?
         } else {
-            hasher.hash_dir(path).await?
+            hasher.hash_dir(path, &pb).await?
         };
+
+        pb.finish_with_message("Hashing complete");
 
         if hash == info.hash && info.last_backup.is_some() {
             continue;

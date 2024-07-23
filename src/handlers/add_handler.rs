@@ -1,14 +1,15 @@
 use std::path::PathBuf;
 
 use eyre::Result;
+use indicatif::{ProgressBar, ProgressStyle};
 use tokio::fs::{self};
 use tracing::info;
+use tracing_subscriber::fmt::format;
 
 use crate::{
-    helpers::{dirs::get_backup_file, Hasher},
+    helpers::{dirs::get_backup_file, get_metadata, Hasher},
     structs::{BackupEntry, BackupFile},
 };
-
 
 /// Adds a path to the backup file.
 ///
@@ -22,11 +23,23 @@ pub async fn start(path: PathBuf) -> Result<()> {
 
     let mut hasher = Hasher::new();
 
+    let metadata = get_metadata(&path).await?;
+
+    let pb = ProgressBar::new(metadata.size);
+    pb.set_style(
+        ProgressStyle::default_bar()
+            .template("{msg}\n{wide_bar} {bytes}/{total_bytes} ({eta})")?
+            .progress_chars("#>-"),
+    );
+    pb.set_message(format!("Hashing {}", path.display()));
+
     let hash = if path.is_file() {
-        hasher.hash_file(&path).await?
+        hasher.hash_file(&path, &pb).await?
     } else {
-        hasher.hash_dir(&path).await?
+        hasher.hash_dir(&path, &pb).await?
     };
+
+    pb.finish_with_message("Hashing complete");
 
     let backup_file = get_backup_file()?;
 
@@ -51,6 +64,7 @@ pub async fn start(path: PathBuf) -> Result<()> {
         BackupEntry {
             hash,
             last_backup: None,
+            metadata,
         },
     );
 
