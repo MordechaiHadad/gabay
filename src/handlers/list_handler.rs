@@ -18,21 +18,22 @@ pub async fn start() -> Result<()> {
         .unwrap_or_default();
 
     let header = format!("Backup Paths Overview");
+    let header_length = header.len();
     println!(
         "╔═══ {header} {}╗", "═".repeat(TABLE_WIDTH)
     );
     let total_paths_string = format!("Total Paths: {}", total_paths);
     println!(
         "║ {total_paths_string}{}║",
-        " ".repeat(TABLE_WIDTH + header.len() - total_paths_string.len() + 4)
+        " ".repeat(TABLE_WIDTH + header_length - total_paths_string.len() + 4)
     );
     let last_backup_string = format!("Last Backup: {}", format_last_backup(last_backup));
     println!(
         "║ {last_backup_string}{}║",
-        " ".repeat(TABLE_WIDTH + header.len() - last_backup_string.len() + 4)
+        " ".repeat(TABLE_WIDTH + header_length - last_backup_string.len() + 4)
     );
     println!(
-        "╠{}╣", "═".repeat(TABLE_WIDTH + header.len() + 5)
+        "╠{}╣", "═".repeat(TABLE_WIDTH + header_length + 5)
     );
 
     for (index, (path, entry)) in backup.iter().enumerate() {
@@ -42,19 +43,19 @@ pub async fn start() -> Result<()> {
             path.to_str().unwrap().to_string()
         };
 
-        println!("║ {}. {}{}║", index + 1, truncated_path, " ".repeat(TABLE_WIDTH + header.len() - truncated_path.len() + 1));
+        println!("║ {}. {}{}║", index + 1, truncated_path, " ".repeat(TABLE_WIDTH + header_length - truncated_path.len() + 1));
         println!(
             "║    └─ Last Backup: {:<67} ║",
             format_last_backup(entry.last_backup)
         );
 
         if index < backup.len() - 1 {
-            println!("╟{}╢", "─".repeat(TABLE_WIDTH + header.len() + 5));
+            println!("╟{}╢", "─".repeat(TABLE_WIDTH + header_length + 5));
         }
     }
 
     println!(
-        "╚{}╝", "═".repeat(TABLE_WIDTH + header.len() + 5)
+        "╚{}╝", "═".repeat(TABLE_WIDTH + header_length + 5)
     );
 
     Ok(())
