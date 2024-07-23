@@ -29,6 +29,7 @@ enum Cli {
     #[clap(alias = "ls")]
     List,
 
+    #[clap(alias = "cmp")]
     Compare {
         path: PathBuf,
     },
