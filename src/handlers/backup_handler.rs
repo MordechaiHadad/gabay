@@ -45,7 +45,7 @@ pub async fn start(dest: PathBuf) -> Result<()> {
     for (path, info) in backup.iter() {
         let file_name = path.file_name().unwrap().to_str().unwrap();
         let is_file = path.is_file();
-        let metadata = get_metadata(&path).await?;
+        let metadata = get_metadata(path).await?;
 
         if metadata.size == info.metadata.size
             || metadata.last_modified == info.metadata.last_modified
@@ -62,7 +62,7 @@ pub async fn start(dest: PathBuf) -> Result<()> {
         pb.set_message(format!("Hashing {}", path.display()));
 
         let hash = if is_file {
-            hasher.hash_file(path, &pb).await?
+            hasher.hash_file(path, &pb, true).await?
         } else {
             hasher.hash_dir(path, &pb).await?
         };

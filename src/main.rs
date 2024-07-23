@@ -6,7 +6,7 @@ mod structs;
 use std::process::exit;
 
 use eyre::Result;
-use tracing::{error, info, Level};
+use tracing::{error, Level};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::{fmt::writer::MakeWriterExt, FmtSubscriber};
 

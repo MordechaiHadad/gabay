@@ -25,7 +25,12 @@ impl Hasher {
         }
     }
 
-    pub async fn hash_file<P: AsRef<Path>>(&mut self, path: P, pb: &ProgressBar) -> Result<String> {
+    pub async fn hash_file<P: AsRef<Path>>(
+        &mut self,
+        path: P,
+        pb: &ProgressBar,
+        finalize: bool,
+    ) -> Result<String> {
         let file = File::open(path).await?;
         let mut reader = BufReader::new(file);
 
@@ -39,8 +44,12 @@ impl Hasher {
             pb.inc(bytes_read as u64);
         }
 
-        let result = self.hasher.finalize_reset();
-        Ok(format!("{:x}", result))
+        if finalize {
+            let result = self.hasher.finalize_reset();
+            return Ok(format!("{:x}", result));
+        }
+
+        Ok("".to_string())
     }
 
     #[async_recursion(?Send)]
@@ -51,7 +60,7 @@ impl Hasher {
             if path.is_dir() {
                 self.hash_dir(path, pb).await?;
             } else {
-                self.hash_file(path, pb).await?;
+                self.hash_file(path, pb, false).await?;
             }
         }
 
@@ -60,7 +69,7 @@ impl Hasher {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Metadata {
     pub size: u64,
     pub last_modified: DateTime<Utc>,

@@ -1,7 +1,5 @@
-use chrono::{format, DateTime, Utc};
+use chrono::{DateTime, Utc};
 use eyre::Result;
-
-use crate::structs::BackupEntry;
 
 const TABLE_WIDTH: usize = 62;
 
@@ -17,22 +15,14 @@ pub async fn start() -> Result<()> {
         .max()
         .unwrap_or_default();
 
-    let header = format!("Backup Paths Overview");
+    let header = "Backup Paths Overview".to_string();
     let header_length = header.len();
-    println!(
-        "╔═══ {header} {}╗", "═".repeat(TABLE_WIDTH)
-    );
+    println!("╔═══ {header} {}╗", "═".repeat(TABLE_WIDTH));
     let total_paths_string = format!("Total Paths: {}", total_paths);
-    println!(
-        "║ {total_paths_string:<87}║"
-    );
+    println!("║ {total_paths_string:<87}║");
     let last_backup_string = format!("Last Backup: {}", format_last_backup(last_backup));
-    println!(
-        "║ {last_backup_string:<87}║",
-    );
-    println!(
-        "╠{}╣", "═".repeat(TABLE_WIDTH + header_length + 5)
-    );
+    println!("║ {last_backup_string:<87}║",);
+    println!("╠{}╣", "═".repeat(TABLE_WIDTH + header_length + 5));
 
     for (index, (path, entry)) in backup.iter().enumerate() {
         let truncated_path = if path.to_str().unwrap().len() > 60 {
@@ -42,12 +32,15 @@ pub async fn start() -> Result<()> {
         };
 
         println!("║ {}. {truncated_path:<84}║", index + 1);
+        println!("║    └─ Hash: {:<74} ║", entry.hash);
         println!(
-            "║    └─ Hash: {:<74} ║",
-            entry.hash
+            "║    └─ Size: {:<74} ║",
+            humanize_bytes(entry.metadata.size)
         );
-        println!("║    └─ Size: {:<74} ║", humanize_bytes(entry.metadata.size));
-        println!("║    └─ Last Modified: {:<65} ║", entry.metadata.last_modified.format("%Y-%m-%d %H:%M:%S"));
+        println!(
+            "║    └─ Last Modified: {:<65} ║",
+            entry.metadata.last_modified.format("%Y-%m-%d %H:%M:%S")
+        );
         println!(
             "║    └─ Last Backup: {:<67} ║",
             format_last_backup(entry.last_backup)
@@ -58,9 +51,7 @@ pub async fn start() -> Result<()> {
         }
     }
 
-    println!(
-        "╚{}╝", "═".repeat(TABLE_WIDTH + header_length + 5)
-    );
+    println!("╚{}╝", "═".repeat(TABLE_WIDTH + header_length + 5));
 
     Ok(())
 }

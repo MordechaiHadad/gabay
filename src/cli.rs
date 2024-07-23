@@ -2,9 +2,10 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use eyre::Result;
-use tracing::info;
 
-use crate::handlers::{add_handler, backup_handler, list_handler, reset_handler, rm_handler};
+use crate::handlers::{
+    add_handler, backup_handler, compare_handler, list_handler, reset_handler, rm_handler,
+};
 
 #[derive(Debug, Parser)]
 #[command(version)]
@@ -27,6 +28,10 @@ enum Cli {
 
     #[clap(alias = "ls")]
     List,
+
+    Compare {
+        path: PathBuf,
+    },
 }
 
 pub async fn start() -> Result<()> {
@@ -45,7 +50,7 @@ pub async fn start() -> Result<()> {
             reset_handler::start().await?;
         }
         Cli::List => list_handler::start().await?,
-
+        Cli::Compare { path } => compare_handler::start(path).await?,
     }
     Ok(())
 }

@@ -1,20 +1,13 @@
-use std::path::PathBuf;
-
 use eyre::Result;
 use indicatif::{ProgressBar, ProgressStyle};
-use tokio::fs::{self};
-use tracing::info;
+use std::path::PathBuf;
+use tokio::fs;
 
 use crate::{
     helpers::{dirs::get_backup_file, get_metadata, Hasher},
-    structs::{BackupEntry, BackupFile},
+    structs::BackupFile,
 };
 
-/// Adds a path to the backup file.
-///
-/// # Errors
-///
-/// This function will return an error if .
 pub async fn start(path: PathBuf) -> Result<()> {
     if !path.is_absolute() {
         return Err(eyre::eyre!("Path must be absolute"));
@@ -43,32 +36,24 @@ pub async fn start(path: PathBuf) -> Result<()> {
     let backup_file = get_backup_file()?;
 
     let content = if backup_file.exists() {
-        Some(fs::read_to_string(&backup_file).await?)
+        fs::read_to_string(&backup_file).await?
     } else {
-        fs::write(&backup_file, "").await?;
-        None
+        return Err(eyre::eyre!("Backup file does not exist"));
     };
 
-    let mut backup: BackupFile = match content {
-        Some(content) => serde_json::from_str(&content)?,
-        None => Default::default(),
-    };
+    let backup: BackupFile = serde_json::from_str(&content)?;
 
-    if backup.contains_key(&path) {
-        return Err(eyre::eyre!("Path is already inside backup file"));
+    if !backup.contains_key(&path) {
+        return Err(eyre::eyre!("Path is not inside backup file"));
     }
 
-    backup.insert(
-        path,
-        BackupEntry {
-            hash,
-            last_backup: None,
-            metadata,
-        },
-    );
+    let old_metadata = backup.get(&path).unwrap().metadata.clone();
+    let old_hash = backup.get(&path).unwrap().hash.clone();
 
-    let content = serde_json::to_string(&backup)?;
-    fs::write(backup_file, content).await?;
-    info!("Path added to backup file");
+    println!(
+        "Are hashes equal: {}, Are metadata equal: {}",
+        old_hash == hash,
+        old_metadata == metadata
+    );
     Ok(())
 }

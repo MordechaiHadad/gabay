@@ -4,7 +4,7 @@ use std::{fs, path::PathBuf};
 pub fn get_backup_dir() -> PathBuf {
     let dir = dirs::data_local_dir().unwrap().join("gabay");
 
-    dir.into()
+    dir
 }
 
 pub fn get_backup_file() -> Result<PathBuf> {
